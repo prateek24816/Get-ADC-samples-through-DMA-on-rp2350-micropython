@@ -18,15 +18,13 @@ class DMA_ADC:
         self.ADC_DIV  = self.ADC_BASE + 0x10
         self.ADC_DREQ = 48 
 
-        # Validate and map pin to ADC channel (GPIO26 = Ch0, GPIO29 = Ch3)
+        # Validate and map pin to ADC channel
         if not (26 <= pin <= 29):
             raise ValueError("ADC pin must be 26, 27, 28, or 29")
         self.channel = pin - 26
         
-        # Init hardware clock to make registers writable
         self.adc_pin = machine.ADC(pin) 
 
-        # Internal state
         self.buffer = None
         self.samples = 0
         

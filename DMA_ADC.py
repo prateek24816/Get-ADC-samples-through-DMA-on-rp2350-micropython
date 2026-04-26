@@ -107,9 +107,23 @@ class DMA_ADC:
         return self.dma.active()
 
     def stop(self):
-        """Forces the ADC and DMA to halt."""
-        self.dma.active(0)
-        machine.mem32[self.ADC_CS] = 0
+            """Forces the ADC and DMA to halt and cleanly resets all hardware registers."""
+            
+            # 1. Stop the DMA channel immediately
+            self.dma.active(0)
+            
+            # 2. SURGICAL SHUTDOWN: 
+            # Turn off START_MANY (Bit 3) to stop the barrage of data, 
+            # but LEAVE the ADC powered on (Bit 0) so MicroPython can still use it!
+            machine.mem32[self.ADC_CS] &= ~(1 << 3)
+            
+            # 3. Clean up the FIFO Control Register (ADC_FCS)
+            # Disable DREQ_EN (bit 3) and FIFO_EN (bit 0)
+            machine.mem32[self.ADC_FCS] &= ~((1 << 3) | (1 << 0))
+            
+            # 4. Flush the pipes! 
+            # Clear FIFO Error (Bit 11) and FIFO Empty (Bit 10) flags.
+            machine.mem32[self.ADC_FCS] |= (1 << 11) | (1 << 10)
         
     def get_data(self):
         """Returns the internal buffer."""
